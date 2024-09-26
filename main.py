@@ -82,15 +82,36 @@ def cancel_move(grid: list[list[int]], move: Move) -> list[list[int]]:
     return grid
 
 
+def solve(grid: list[list[int]], moves: list[Move]) -> list[Move] | bool:
+    if is_won(grid):
+        return moves
+
+    for move in get_moves(grid):
+        make_move(grid, move)
+        moves.append(move)
+
+        result = solve(grid, moves)
+        if result:
+            return result
+
+        moves.pop()
+        cancel_move(grid, move)
+
+    return False
+
+
 def main():
     grid = get_grid()
-    print(grid)
+    result = solve(grid, [])
     show_grid(grid)
-    for move in get_moves(grid):
-        print(move)
-        make_move(grid, move)
-        show_grid(grid)
-        cancel_move(grid, move)
+    if result == False or result == True:
+        print("not found")
+        return
+    new_grid = get_grid()
+    for move in result:
+        make_move(new_grid, move)
+        print(move[0], move[2])
+        show_grid(new_grid)
 
 
 if __name__ == "__main__":
