@@ -4,6 +4,21 @@ FULL = 2
 
 Move = tuple[tuple[int, int], tuple[int, int], tuple[int, int]]
 
+loosing_hash_table = {}
+winning_hash_table = {}
+global_counter = 0
+
+
+def get_hash(grid: list[list[int]]) -> int:
+    hash = 0
+    for y in range(7):
+        for x in range(7):
+            i = y * 7 + x
+            if grid[y][x] == FULL:
+                hash |= 1 << i
+
+    return hash
+
 
 # english version
 def get_grid() -> list[list[int]]:
@@ -82,36 +97,43 @@ def cancel_move(grid: list[list[int]], move: Move) -> list[list[int]]:
     return grid
 
 
-def solve(grid: list[list[int]], moves: list[Move]) -> list[Move] | bool:
+def solve(grid: list[list[int]], moves: list[Move]) -> int:
+    global global_counter
+    if loosing_hash_table.get(get_hash(grid)):
+        return 0
     if is_won(grid):
-        return moves
+        global_counter += 1
+        print(f"-- new solution {global_counter} --")
+        return 1
+    if winning_hash_table.get(get_hash(grid)):
+        global_counter += winning_hash_table[get_hash(grid)]
+        print(f"-- new solution {global_counter} --")
+        return winning_hash_table[get_hash(grid)]
 
+    nb_result = 0
     for move in get_moves(grid):
         make_move(grid, move)
         moves.append(move)
 
         result = solve(grid, moves)
         if result:
-            return result
+            nb_result += result
 
         moves.pop()
         cancel_move(grid, move)
 
-    return False
+    if not nb_result:
+        loosing_hash_table[get_hash(grid)] = True
+    else:
+        winning_hash_table[get_hash(grid)] = nb_result
+    return nb_result
 
 
 def main():
     grid = get_grid()
     result = solve(grid, [])
     show_grid(grid)
-    if result == False or result == True:
-        print("not found")
-        return
-    new_grid = get_grid()
-    for move in result:
-        make_move(new_grid, move)
-        print(move[0], move[2])
-        show_grid(new_grid)
+    print(result)
 
 
 if __name__ == "__main__":
