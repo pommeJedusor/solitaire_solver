@@ -1,3 +1,6 @@
+from typing import List
+
+
 OUT = 0
 VOID = 1
 FULL = 2
@@ -10,15 +13,46 @@ global_counter = 0
 
 
 def get_hash(grid: list[list[int]]) -> int:
-    hash = 0
+    hash, i = 0, 0
     for y in range(7):
         for x in range(7):
-            i = y * 7 + x
             if grid[y][x] == FULL:
                 hash |= 1 << i
-
+            i += 1
     return hash
 
+def get_hashes(grid: list[list[int]]) -> List[int]:
+    # 0°
+    hashes = [get_hash(grid)]
+
+    # 180°
+    hash, i = 0, 0
+    for y in range(7)[::-1]:
+        for x in range(7)[::-1]:
+            if grid[y][x] == FULL:
+                hash |= 1 << i
+            i += 1
+    hashes.append(hash)
+
+    # 90°
+    hash, i = 0, 0
+    for x in range(7)[::-1]:
+        for y in range(7):
+            if grid[y][x] == FULL:
+                hash |= 1 << i
+            i += 1
+    hashes.append(hash)
+
+    # 270°
+    hash, i = 0, 0
+    for x in range(7):
+        for y in range(7)[::-1]:
+            if grid[y][x] == FULL:
+                hash |= 1 << i
+            i += 1
+    hashes.append(hash)
+
+    return hashes
 
 # english version
 def get_grid() -> list[list[int]]:
@@ -97,13 +131,12 @@ def cancel_move(grid: list[list[int]], move: Move) -> list[list[int]]:
     return grid
 
 
-def solve(grid: list[list[int]], moves: list[Move]) -> int:
+def solve(grid: list[list[int]]) -> int:
     global global_counter
     if loosing_hash_table.get(get_hash(grid)):
         return 0
     if is_won(grid):
         global_counter += 1
-        print(f"-- new solution {global_counter} --")
         return 1
     if winning_hash_table.get(get_hash(grid)):
         global_counter += winning_hash_table[get_hash(grid)]
@@ -113,25 +146,25 @@ def solve(grid: list[list[int]], moves: list[Move]) -> int:
     nb_result = 0
     for move in get_moves(grid):
         make_move(grid, move)
-        moves.append(move)
 
-        result = solve(grid, moves)
+        result = solve(grid)
         if result:
             nb_result += result
 
-        moves.pop()
         cancel_move(grid, move)
 
     if not nb_result:
-        loosing_hash_table[get_hash(grid)] = True
+        for hash in get_hashes(grid):
+            loosing_hash_table[hash] = True
     else:
-        winning_hash_table[get_hash(grid)] = nb_result
+        for hash in get_hashes(grid):
+            winning_hash_table[hash] = nb_result
     return nb_result
 
 
 def main():
     grid = get_grid()
-    result = solve(grid, [])
+    result = solve(grid)
     show_grid(grid)
     print(result)
 
